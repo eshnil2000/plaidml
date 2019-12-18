@@ -68,7 +68,7 @@ private:
   // Test if idx in the tensors are stride one
   bool ValidateStrideOne(BlockArgument* idx, unsigned matrix_idx);
 
-  // Number of processors
+  // Optimization options
   const MLIR_AutoStencilPass& options;
   // Stencil efficiency heatmap
   std::map<std::tuple<unsigned, unsigned, unsigned>, double> kHeatmap;
@@ -210,10 +210,7 @@ double AutoStencil::Evaluate() {
     }
   }
 
-  // If the CPUs support hyperthreading, the outermost loop's product should be greater
-  // than the processor bumber. Otherwise, the CPUs are nut fully utilized.
-  size_t processors = options.hyperthreading() ? (options.processors() * 2) : options.processors();
-  unsigned outer_batches = (tot_outer_loop - 1) / processors + 1;
+  unsigned outer_batches = (tot_outer_loop - 1) / std::thread::hardware_concurrency() + 1;
   double perf = outer_batches * tot_middle_loop * (startup_cost + inner_time);
   IVLOG(3, "Performance = " << perf);
 

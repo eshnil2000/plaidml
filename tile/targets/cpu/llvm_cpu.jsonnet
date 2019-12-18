@@ -56,7 +56,6 @@ local PARAMS = {
                pass: {
                  '@type': 'type.vertex.ai/vertexai.tile.codegen.proto.MLIR_AutoStencilPass',
                  reqs: ['agg_op_add', 'comb_op_mul'],
-                 processors: 56,
                  startup_cost: 32,
                  only_even: [true, true, true], // XSMM lib does not allow innermost constraints
                  only_po2: [false, false, false],
@@ -171,13 +170,21 @@ local PARAMS = {
               },
             },
 
-            // Init aggregation outputs
-            // Keet this towards the end since other passes are generating intermediate blocks and the initialization 
-            // on aggregation transition could break in such cases.
             {
-              name: 'init_aggregation_outputs',
+               name: 'mlir_agginit',
+               pass: {
+                 '@type': 'type.vertex.ai/vertexai.tile.codegen.proto.MLIR_AggInitPass',
+                 reqs: ['contraction'],
+                 parallel: true,
+                 cache_line: 64,
+             },
+            },
+
+            // Remove unused refinements after fusing, scalarization, and program placement
+            {
+              name: 'prune_refs_1',
               pass: {
-                '@type': 'type.vertex.ai/vertexai.tile.codegen.proto.AggregationBlockOutputInitializationPass',
+                '@type': 'type.vertex.ai/vertexai.tile.codegen.proto.PruneRefinementsPass',
                 reqs: ['program'],
               },
             },
