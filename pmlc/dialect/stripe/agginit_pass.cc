@@ -149,6 +149,8 @@ void AggregateInitializer::InsertInit(AggregateOp aop) {
   if (options.parallel() && init_loc->getParentOp() == curOp.getParentOp()) {
     ParallelizeEltwise(loop_op, options.cache_line() / byte_width(init_type), "cpu_thread");
   }
+  setOpAttrUnit(loop_op, loop_op.getBodyBuilder(), "kernel");
+  setOpAttrUnit(loop_op, loop_op.getBodyBuilder(), "eltwise");
 }
 
 // Initialize the aggregate buffers in op
