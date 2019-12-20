@@ -53,10 +53,10 @@ std::pair<Operation*, Value*> AggregateInitializer::InitLocation(Value* tensor) 
   while (cur_tensor) {
     if (auto def_op = cur_tensor->getDefiningOp()) {
       if (auto allocate_op = mlir::dyn_cast<AllocateOp>(def_op)) {
-        // The initialization should be right after the allocation
         if (!last_refine) {
           throw std::runtime_error("Using tensor without refine op.");
         }
+        // The initialization should be right after the allocation/refinement pair
         auto iter = last_refine->getIterator();
         ++iter;
         return std::make_pair(&(*iter), prev_tensor);
@@ -82,8 +82,6 @@ std::pair<Operation*, Value*> AggregateInitializer::InitLocation(Value* tensor) 
 // Insert the initialization for the tensor in the aggregate op
 void AggregateInitializer::InsertInit(AggregateOp aop) {
   Value* tensor = aop.into();
-  //util::stringifyAggregationKind(op.agg());
-  //auto ref_op = mlir::dyn_cast<RefineOp>(value->getDefiningOp());
   llvm::SmallVector<AffineRange, 8> ranges;
   FlatTensorAccess flat_access = ComputeAccess(tensor);
   for (AffinePolynomial& ap : flat_access.access) {
