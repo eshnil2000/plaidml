@@ -82,11 +82,23 @@ std::pair<Operation*, Value*> AggregateInitializer::InitLocation(Value* tensor) 
 // Insert the initialization for the tensor in the aggregate op
 void AggregateInitializer::InsertInit(AggregateOp aop) {
   Value* tensor = aop.into();
+
+  // Compute the extents
   llvm::SmallVector<AffineRange, 8> ranges;
   FlatTensorAccess flat_access = ComputeAccess(tensor);
   for (AffinePolynomial& ap : flat_access.access) {
     ranges.push_back(AffineRange(ap));
   }
+  // Compute the tensor dimension limits
+  TensorType base_type = baseType(tensor);
+  auto shape = base_type.getShape();
+  for (unsigned i = 0; i < ranges.size(); ++i) {
+    if (shape[i].cls == kAddressClassIdentifier &&
+        shape[i].size - 1 < ranges[i].max) {
+      ranges[i].max = shape[i].size - 1;
+    }
+  }
+
   IVLOG(3, "Initialize " << tensorName(tensor).str());
   for (AffineRange& ap : ranges) {
     IVLOG(3, "    " << ap.min << " " << ap.max);
